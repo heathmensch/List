@@ -1,0 +1,20 @@
+// Shape of the database. Prisma reads this file at generate/migrate time, not
+// on every HTTP request. The running server uses the generated client in
+// src/generated/prisma. After you change models:
+//   pnpm db:migrate   — write SQL, apply it to Postgres
+//   pnpm db:generate  — rebuild the TypeScript client
+
+generator client {
+  provider = "prisma-client"
+  // Generated TypeScript client. Do not edit files under this folder.
+  output   = "../src/generated/prisma"
+}
+
+// Engine is Postgres. The actual URL lives in prisma.config.ts / .env
+// (Prisma 7 no longer puts url = env("DATABASE_URL") in this file).
+datasource db {
+  provider = "postgresql"
+}
+
+// Domain models belong here. Left empty on purpose so the first
+// product schema can be designed without throwing away a placeholder.
