@@ -1,10 +1,13 @@
 @import "tailwindcss";
 
-/* CSS variables for light/dark. Tailwind v4's @theme inline maps them to
-   utility classes like bg-background and text-foreground. */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1c1c1a;
+  --sidebar: #f6f6f4;
+  --border: #e8e8e4;
+  --muted: #6b6b66;
+  --brand: #1f4d3a;
+  --nav-active: #e8eef2;
 }
 
 @theme inline {
@@ -14,15 +17,8 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, sans-serif;
 }
