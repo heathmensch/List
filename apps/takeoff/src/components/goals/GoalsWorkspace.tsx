@@ -16,6 +16,7 @@
 //   - Goal (has children), depth < 10:
 //       "Add another goal folder"
 //   - Depth 10 leaf: tasks only (cannot add goal layer)
+//   - Leaf (category): "Delete" → confirm modal (warns if tasks will cascade)
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -23,6 +24,7 @@ import {
   clearFolderTasks,
   createFolder,
   createTask,
+  deleteFolder,
   deleteTask,
   getMe,
   listFolders,
@@ -40,6 +42,7 @@ import {
 } from "@/components/goals/FolderContextMenu";
 import { FolderDetail } from "@/components/goals/FolderDetail";
 import { NamePrompt } from "@/components/goals/NamePrompt";
+import { ConfirmDeleteFolder } from "@/components/goals/ConfirmDeleteFolder";
 
 const MAX_DEPTH = 10;
 
@@ -47,23 +50,38 @@ type NamePromptState =
   | { mode: "top-level" }
   | { mode: "child"; parentId: string };
 
+type DeleteConfirmState = {
+  folderId: string;
+  folderName: string;
+  taskCount: number;
+};
+
 function GoalsWorkspaceInner() {
   const { showToast } = useToast();
 
   const [userId, setUserId] = useState<string | null>(null);
   const [folders, setFolders] = useState<Folder[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  // Tasks are keyed by folder id so we never sync-clear in an effect (eslint).
+  const [taskCache, setTaskCache] = useState<{
+    folderId: string;
+    tasks: Task[];
+  } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [menu, setMenu] = useState<ContextMenuState | null>(null);
   const [prompt, setPrompt] = useState<NamePromptState | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState | null>(
+    null,
+  );
 
   const tree = useMemo(() => buildFolderTree(folders), [folders]);
   const selected = folders.find((f) => f.id === selectedId) ?? null;
   const breadcrumbs = selected
     ? folderBreadcrumbs(folders, selected.id)
     : [];
+  const tasks =
+    selectedId && taskCache?.folderId === selectedId ? taskCache.tasks : [];
 
   /** Show Pluto/API errors as toasts. */
   const reportError = useCallback(
@@ -123,14 +141,14 @@ function GoalsWorkspaceInner() {
   // Load tasks whenever the selected folder changes.
   useEffect(() => {
     if (!userId || !selectedId) {
-      setTasks([]);
       return;
     }
+    const folderId = selectedId;
     let cancelled = false;
     (async () => {
       try {
-        const { tasks: next } = await listTasks(userId, selectedId);
-        if (!cancelled) setTasks(next);
+        const { tasks: next } = await listTasks(userId, folderId);
+        if (!cancelled) setTaskCache({ folderId, tasks: next });
       } catch (error) {
         if (!cancelled) reportError(error);
       }
@@ -173,9 +191,26 @@ function GoalsWorkspaceInner() {
     if (!userId) return;
     try {
       await clearFolderTasks(userId, folderId);
-      setTasks([]);
+      setTaskCache({ folderId, tasks: [] });
       showToast("Tasks cleared. Name the next goal folder.", "success");
       setPrompt({ mode: "child", parentId: folderId });
+    } catch (error) {
+      reportError(error);
+    }
+  }
+
+  /** Confirm modal → DELETE /folders/:id, then refresh the tree. */
+  async function handleConfirmDelete() {
+    if (!userId || !deleteConfirm) return;
+    const { folderId } = deleteConfirm;
+    try {
+      await deleteFolder(userId, folderId);
+      setDeleteConfirm(null);
+      setTaskCache(null);
+      // Prefer selecting the parent if it still exists after demotion/refresh.
+      const deleted = folders.find((f) => f.id === folderId);
+      await refreshFolders(userId, deleted?.parentId ?? null);
+      showToast("Folder deleted.", "success");
     } catch (error) {
       reportError(error);
     }
@@ -236,6 +271,20 @@ function GoalsWorkspaceInner() {
           },
         });
       }
+
+      // Leaf-only delete (no children). Tasks cascade; confirm modal warns first.
+      items.push({
+        id: "delete",
+        label: "Delete",
+        danger: true,
+        onSelect: () => {
+          setDeleteConfirm({
+            folderId: folder.id,
+            folderName: folder.name,
+            taskCount,
+          });
+        },
+      });
     } else if (folder.kind === "goal" && folder.depth < MAX_DEPTH) {
       items.push({
         id: "add-goal",
@@ -256,7 +305,7 @@ function GoalsWorkspaceInner() {
     if (userId) {
       try {
         const { tasks: next } = await listTasks(userId, folderId);
-        setTasks(next);
+        setTaskCache({ folderId, tasks: next });
         taskCount = next.length;
       } catch (error) {
         reportError(error);
@@ -334,8 +383,15 @@ function GoalsWorkspaceInner() {
                     taskId,
                     completed,
                   );
-                  setTasks((prev) =>
-                    prev.map((t) => (t.id === task.id ? task : t)),
+                  setTaskCache((prev) =>
+                    prev && prev.folderId === selected.id
+                      ? {
+                          folderId: selected.id,
+                          tasks: prev.tasks.map((t) =>
+                            t.id === task.id ? task : t,
+                          ),
+                        }
+                      : prev,
                   );
                 } catch (error) {
                   reportError(error);
@@ -345,7 +401,14 @@ function GoalsWorkspaceInner() {
                 if (!userId) return;
                 try {
                   const { task } = await createTask(userId, selected.id, title);
-                  setTasks((prev) => [...prev, task]);
+                  setTaskCache((prev) =>
+                    prev && prev.folderId === selected.id
+                      ? {
+                          folderId: selected.id,
+                          tasks: [...prev.tasks, task],
+                        }
+                      : { folderId: selected.id, tasks: [task] },
+                  );
                 } catch (error) {
                   reportError(error);
                 }
@@ -354,7 +417,14 @@ function GoalsWorkspaceInner() {
                 if (!userId) return;
                 try {
                   await deleteTask(userId, taskId);
-                  setTasks((prev) => prev.filter((t) => t.id !== taskId));
+                  setTaskCache((prev) =>
+                    prev && prev.folderId === selected.id
+                      ? {
+                          folderId: selected.id,
+                          tasks: prev.tasks.filter((t) => t.id !== taskId),
+                        }
+                      : prev,
+                  );
                 } catch (error) {
                   reportError(error);
                 }
@@ -387,6 +457,15 @@ function GoalsWorkspaceInner() {
           confirmLabel="Create"
           onCancel={() => setPrompt(null)}
           onConfirm={handleCreateNamed}
+        />
+      )}
+
+      {deleteConfirm && (
+        <ConfirmDeleteFolder
+          folderName={deleteConfirm.folderName}
+          taskCount={deleteConfirm.taskCount}
+          onCancel={() => setDeleteConfirm(null)}
+          onConfirm={handleConfirmDelete}
         />
       )}
     </div>

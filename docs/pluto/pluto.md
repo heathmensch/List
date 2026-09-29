@@ -48,7 +48,7 @@ Takeoff calls these from `apps/takeoff/src/lib/api.ts` with `NEXT_PUBLIC_API_URL
 | GET | `/me` | Upsert demo user; returns `{ id, email }` |
 | GET | `/folders` | Flat folder list for `X-User-Id` |
 | POST | `/folders` | Create top-level or child (`name`, optional `parentId`) |
-| POST | `/folders/:id/clear-tasks` | Delete all tasks on a leaf |
+| DELETE | `/folders/:id` | Delete leaf folder (no children); tasks cascade; may demote parent |
 | GET | `/folders/:id/tasks` | List tasks |
 | POST | `/folders/:id/tasks` | Create task (`title`) |
 | PATCH | `/tasks/:id` | Set `completed` |

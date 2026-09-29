@@ -175,6 +175,58 @@ export async function clearTasksOnFolder(userId: string, folderId: string) {
   return { deleted: result.count };
 }
 
+/**
+ * Delete a leaf folder (no child folders).
+ *
+ * Rules:
+ * - Reject if the folder has any children (recursive delete is out of scope).
+ * - Tasks on this folder cascade-delete via Prisma (Task.folder onDelete: Cascade).
+ * - If this was the last child of a parent goal, demote that parent back to category
+ *   so it can hold tasks again.
+ */
+export async function deleteLeafFolder(userId: string, folderId: string) {
+  const folder = await getOwnedFolder(userId, folderId);
+
+  const childCount = await prisma.folder.count({
+    where: { userId, parentId: folder.id },
+  });
+  if (childCount > 0) {
+    throw new FolderError(
+      400,
+      "Remove all subfolders before deleting this folder.",
+    );
+  }
+
+  // Also reject kind=goal with zero children if that ever appears (inconsistent state).
+  if (folder.kind === "goal") {
+    throw new FolderError(
+      400,
+      "Remove all subfolders before deleting this folder.",
+    );
+  }
+
+  const parentId = folder.parentId;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.folder.delete({ where: { id: folder.id } });
+
+    // Last child removed → parent is a leaf again (category).
+    if (parentId) {
+      const remaining = await tx.folder.count({
+        where: { userId, parentId },
+      });
+      if (remaining === 0) {
+        await tx.folder.update({
+          where: { id: parentId },
+          data: { kind: "category" satisfies FolderKind },
+        });
+      }
+    }
+  });
+
+  return { ok: true as const };
+}
+
 /** Flat list of one user's folders (UI builds the tree client-side). */
 export async function listFoldersForUser(userId: string) {
   return prisma.folder.findMany({

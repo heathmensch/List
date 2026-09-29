@@ -5,6 +5,7 @@
 //   listFolders(userId)          → GET  /folders
 //   createFolder(userId, ...)    → POST /folders
 //   clearFolderTasks(userId, id) → POST /folders/:id/clear-tasks
+//   deleteFolder(userId, id)     → DELETE /folders/:id
 //   listTasks(userId, folderId)  → GET  /folders/:id/tasks
 //   createTask(userId, ...)      → POST /folders/:id/tasks
 //   setTaskCompleted(...)        → PATCH /tasks/:id
@@ -168,6 +169,17 @@ export function createFolder(
 export function clearFolderTasks(userId: string, folderId: string) {
   return apiFetch<{ deleted: number }>(`/folders/${folderId}/clear-tasks`, {
     method: "POST",
+    userId,
+  });
+}
+
+/**
+ * Delete a leaf folder (no children). Tasks on it are removed by the DB cascade.
+ * Pluto returns 400 if the folder still has subfolders.
+ */
+export function deleteFolder(userId: string, folderId: string) {
+  return apiFetch<{ ok: true }>(`/folders/${folderId}`, {
+    method: "DELETE",
     userId,
   });
 }

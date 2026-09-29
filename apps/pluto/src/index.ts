@@ -8,6 +8,7 @@
 //   GET  /folders                     → flat folder list (X-User-Id)
 //   POST /folders                     → create top-level or child folder
 //   POST /folders/:id/clear-tasks     → wipe tasks on a leaf
+//   DELETE /folders/:id               → delete leaf folder (tasks cascade)
 //   GET  /folders/:id/tasks           → list tasks
 //   POST /folders/:id/tasks           → create task
 //   PATCH /tasks/:id                  → toggle completed

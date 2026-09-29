@@ -12,6 +12,7 @@ import {
   addChildFolder,
   clearTasksOnFolder,
   createTopLevelFolder,
+  deleteLeafFolder,
   listFoldersForUser,
 } from "../lib/folders.js";
 import {
@@ -125,6 +126,20 @@ foldersRouter.post(
   asyncHandler(async (req, res) => {
     const userId = requireUserId(req);
     const result = await clearTasksOnFolder(userId, req.params.folderId as string);
+    res.json(result);
+  }),
+);
+
+/**
+ * DELETE /folders/:folderId
+ * Deletes a leaf folder (no children). Attached tasks cascade away in Postgres.
+ * If this was the parent's last child, the parent is demoted to category.
+ */
+foldersRouter.delete(
+  "/:folderId",
+  asyncHandler(async (req, res) => {
+    const userId = requireUserId(req);
+    const result = await deleteLeafFolder(userId, req.params.folderId as string);
     res.json(result);
   }),
 );
