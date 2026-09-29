@@ -2,15 +2,16 @@
 
 Takeoff is the frontend. It is a Next.js app that users hit in the browser. It talks to Pluto over HTTP.
 
-Most day-to-day work happens under `src/`: pages and UI in `src/app/`, and helpers (like calling Pluto) in `src/lib/`.
+Most day-to-day work happens under `src/`: pages and UI in `src/app/`, shared UI in `src/components/`, and Pluto helpers in `src/lib/`.
 
 ```
 apps/takeoff
   src/app/            Pages, layout, and global styles
-  src/lib/            Helpers for talking to Pluto
+  src/components/     Sidebar, Goals workspace, toasts
+  src/lib/            Pluto client + folder tree helpers
   .env.local          Frontend env vars (not committed)
   .env.example        Copy this if you need a new .env.local
-  next.config.ts      Next.js settings (empty for now)
+  next.config.ts      Next.js settings
   package.json        Scripts: dev, build, lint
 ```
 
@@ -18,40 +19,36 @@ You can ignore `node_modules/` and `.next/`. Those are installed or generated, n
 
 ---
 
----
-
 ## `src/app/`
 
-This is the App Router. Files here become routes.
-
-| Path          | Why you care                                                                                                                                                                                             |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `layout.tsx`  | The shell around every page: HTML document, fonts, and site-wide metadata (title, description).                                                                                                          |
-| `page.tsx`    | The home page (`/`). It asks Pluto if the API and database are up, then shows that status. New screens are more `page.tsx` files in new folders (for example `src/app/about/page.tsx` becomes `/about`). |
-| `globals.css` | Global styles and Tailwind. Shared look-and-feel goes here.                                                                                                                                              |
-
-Add a `public/` folder at the Takeoff root later if you need images, icons, or other static files.
+| Path              | Why you care |
+| ----------------- | ------------ |
+| `layout.tsx`      | App shell: fonts, metadata, left Sidebar, main column. |
+| `page.tsx`        | Goals (`/`) — mounts `GoalsWorkspace`. |
+| `today/page.tsx`  | Today (`/today`) — header only for now. |
+| `globals.css`     | Brand colors (`--brand`, `--sidebar`, etc.) and Tailwind. |
 
 ---
+
+## `src/components/`
+
+| Path | Why you care |
+| ---- | ------------ |
+| `Sidebar.tsx` | Nav: Goals + Today. |
+| `Toast.tsx` | Error/success toasts (e.g. “delete tasks before adding a goal layer”). |
+| `goals/GoalsWorkspace.tsx` | Loads `/me` + folders/tasks; tree, context menu, detail panel. |
+| `goals/FolderTree.tsx` | Nested colored folder list. |
+| `goals/FolderDetail.tsx` | Breadcrumbs + action steps for the selected folder. |
+| `goals/FolderContextMenu.tsx` | Right-click menu. |
+| `goals/NamePrompt.tsx` | Modal to name a new folder. |
 
 ---
 
 ## `src/lib/`
 
-Shared TypeScript that is not a page.
+| Path | Why you care |
+| ---- | ------------ |
+| `api.ts` | All Pluto HTTP calls + shared `Folder` / `Task` types. Start here to see frontend↔backend linkage. |
+| `folderTree.ts` | Builds a nested tree from Pluto’s flat `GET /folders` list. |
 
-| Path     | Why you care                                                                                            |
-| -------- | ------------------------------------------------------------------------------------------------------- |
-| `api.ts` | Knows Pluto's URL and how to call `GET /health`. Put more Pluto client functions here as the API grows. |
-
----
-
----
-
-## Files at this level you might still open
-
-| File             | Why you care                                                                                        |
-| ---------------- | --------------------------------------------------------------------------------------------------- |
-| `.env.local`     | `NEXT_PUBLIC_API_URL` so the browser/server knows where Pluto is (`http://localhost:4000` locally). |
-| `next.config.ts` | Next.js config. Leave it until you need a real setting.                                             |
-| `package.json`   | Scripts for running Takeoff. Prefer the root `pnpm` commands in the main README.                    |
+`NEXT_PUBLIC_API_URL` (default `http://localhost:4000`) must point at Pluto.

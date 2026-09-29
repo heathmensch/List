@@ -1,10 +1,30 @@
 // Pluto's entry point. Node loads this file, Express builds a request pipeline,
 // then app.listen() binds a TCP server. Each HTTP request runs through the
-// app.use() middleware in order, then the matching app.get()/app.post() handler.
+// app.use() middleware in order, then the matching route handler.
+//
+// Route map (Goals feature):
+//   GET  /health
+//   GET  /me                          → demo user { id, email }
+//   GET  /folders                     → flat folder list (X-User-Id)
+//   POST /folders                     → create top-level or child folder
+//   POST /folders/:id/clear-tasks     → wipe tasks on a leaf
+//   GET  /folders/:id/tasks           → list tasks
+//   POST /folders/:id/tasks           → create task
+//   PATCH /tasks/:id                  → toggle completed
+//   DELETE /tasks/:id                 → delete task
+//
+// Takeoff (Next.js) calls these from apps/takeoff/src/lib/api.ts using
+// NEXT_PUBLIC_API_URL (default http://localhost:4000).
 import "dotenv/config";
 import cors from "cors";
 import express from "express";
 import { prisma } from "./lib/prisma.js";
+import {
+  folderTasksRouter,
+  foldersRouter,
+  meRouter,
+  tasksRouter,
+} from "./routes/goals.js";
 
 const app = express();
 // Port Pluto listens on. Comes from apps/pluto/.env, or 4000 if unset.
@@ -14,9 +34,11 @@ const corsOrigin = process.env.CORS_ORIGIN ?? "http://localhost:3000";
 
 // CORS middleware adds Access-Control-Allow-Origin so a browser on Takeoff's
 // origin can call this API. Server-to-server fetches (Next.js SSR) skip this.
+// Expose nothing special; the browser sends X-User-Id as a request header.
 app.use(
   cors({
     origin: corsOrigin,
+    allowedHeaders: ["Content-Type", "X-User-Id"],
   }),
 );
 // Body parser: if the request has Content-Type: application/json, put the
@@ -42,6 +64,12 @@ app.get("/health", async (_req, res) => {
     });
   }
 });
+
+// Goals / auth-bootstrap routes — see src/routes/goals.ts for handlers.
+app.use("/me", meRouter);
+app.use("/folders", foldersRouter);
+app.use("/folders/:folderId/tasks", folderTasksRouter);
+app.use("/tasks", tasksRouter);
 
 const server = app.listen(port, () => {
   console.log(`API listening on http://localhost:${port}`);

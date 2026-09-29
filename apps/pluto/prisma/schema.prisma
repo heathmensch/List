@@ -3,6 +3,12 @@
 // src/generated/prisma. After you change models:
 //   pnpm db:migrate   — write SQL, apply it to Postgres
 //   pnpm db:generate  — rebuild the TypeScript client
+//
+// Product model (Goals tree):
+//   User  → owns many Folders and Tasks (email auth will populate User rows).
+//   Folder → nested via parentId; kind flips between category (leaf) and goal
+//            (has children). See FolderKind comments below.
+//   Task  → belongs to a leaf Folder (kind = category) only.
 
 generator client {
   provider = "prisma-client"
@@ -16,5 +22,116 @@ datasource db {
   provider = "postgresql"
 }
 
-// Domain models belong here. Left empty on purpose so the first
-// product schema can be designed without throwing away a placeholder.
+// ---------------------------------------------------------------------------
+// FolderKind
+// ---------------------------------------------------------------------------
+// category = leaf node in the tree.
+//   - May hold everyday Tasks.
+//   - May gain child folders ONLY if it currently has zero tasks and depth < 10.
+//   - When it gains a child, this row is updated to kind = goal.
+//
+// goal = non-leaf node (has at least one child folder).
+//   - Must never hold Tasks.
+//   - May gain more child folders (up to 10 siblings under it) while depth < 10.
+//   - New children are always created as kind = category (new leaves).
+//
+// Why store kind instead of deriving "is leaf" from children?
+//   The product treats "this node has children" as an explicit promotion from
+//   category → goal when the user chooses "add another goal folder". Keeping
+//   kind on the row makes API checks and UI menus obvious without extra joins.
+enum FolderKind {
+  category
+  goal
+}
+
+// ---------------------------------------------------------------------------
+// User
+// ---------------------------------------------------------------------------
+// One row per signed-in person. Email auth is not wired yet; Pluto currently
+// upserts a single demo user from GET /me so folders/tasks still have a real
+// userId foreign key. Replace the demo path with real auth later — the schema
+// does not need to change for that.
+model User {
+  id        String   @id @default(uuid())
+  // Unique login identity once email auth lands.
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  folders Folder[]
+  tasks   Task[]
+}
+
+// ---------------------------------------------------------------------------
+// Folder
+// ---------------------------------------------------------------------------
+// One node in a user's Goals tree (screenshot middle column).
+//
+// Hierarchy:
+//   parentId = null  → top-level folder (depth must be 1)
+//   parentId = <id>  → nested under that folder (depth = parent.depth + 1)
+//
+// Limits (enforced in Pluto route logic, not only here):
+//   - At most 10 folders sharing the same (userId, parentId) — including
+//     top-level where parentId is null.
+//   - depth is 1..10; a folder at depth 10 cannot gain children.
+model Folder {
+  id     String @id @default(uuid())
+  // Owner. Always filter by this so users never see each other's trees.
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Self-relation for the tree. onDelete Cascade means deleting a folder
+  // also deletes its descendants (Postgres FK on parentId).
+  parentId String?
+  parent   Folder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children Folder[] @relation("FolderTree")
+
+  // Display name after validation (trimmed, non-empty).
+  name String
+  // category (leaf) or goal (has children). See FolderKind docs above.
+  kind FolderKind @default(category)
+  // UI swatch for the folder icon (e.g. "#3B82F6"). Chosen when created.
+  color String
+  // 1 = top-level … 10 = deepest allowed.
+  depth Int @default(1)
+  // Order among siblings (same parentId). Lower sorts first in the UI.
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks Task[]
+
+  // Speeds up "list children of X for user Y" and sibling-count checks.
+  @@index([userId, parentId])
+  // Speeds up loading one user's full tree.
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Task
+// ---------------------------------------------------------------------------
+// Everyday action step attached to a leaf folder (Folder.kind = category).
+// The Today page will later query these by userId / dueDate; for now the Goals
+// detail panel lists tasks for the selected folder.
+model Task {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Must reference a folder that is kind = category (enforced in API).
+  folderId String
+  folder   Folder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  title       String
+  completed   Boolean   @default(false)
+  // Optional; useful when Today planning lands.
+  dueDate     DateTime?
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([folderId])
+  @@index([userId])
+}

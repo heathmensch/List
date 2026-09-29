@@ -27,7 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-dvh font-sans">
         <div className="flex min-h-dvh">
           <Sidebar />
-          <main className="flex min-w-0 flex-1 flex-col bg-[var(--background)] px-10 py-8">
+          <main className="flex min-h-dvh min-w-0 flex-1 flex-col bg-[var(--background)] px-10 py-8">
             {children}
           </main>
         </div>
