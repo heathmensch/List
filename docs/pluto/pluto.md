@@ -48,7 +48,10 @@ Takeoff calls these from `apps/takeoff/src/lib/api.ts` with `NEXT_PUBLIC_API_URL
 | GET | `/me` | Upsert demo user; returns `{ id, email }` |
 | GET | `/folders` | Flat folder list for `X-User-Id` |
 | POST | `/folders` | Create top-level or child (`name`, optional `parentId`) |
-| DELETE | `/folders/:id` | Delete leaf folder (no children); tasks cascade; may demote parent |
+| GET | `/today/plan` | Leaf goals + tasks for Plan Your Day |
+| GET | `/today/blocks?from&to` | Time blocks in an ISO range (client sends local-day bounds) |
+| POST | `/today/blocks` | Schedule a task (`taskId`, `startAt`, `endAt`); rejects overlaps |
+| DELETE | `/today/blocks/:id` | Remove a calendar block (task remains on the goal) |
 | GET | `/folders/:id/tasks` | List tasks |
 | POST | `/folders/:id/tasks` | Create task (`title`) |
 | PATCH | `/tasks/:id` | Set `completed` |

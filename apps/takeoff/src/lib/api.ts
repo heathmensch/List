@@ -10,6 +10,10 @@
 //   createTask(userId, ...)      → POST /folders/:id/tasks
 //   setTaskCompleted(...)        → PATCH /tasks/:id
 //   deleteTask(...)              → DELETE /tasks/:id
+//   getTodayPlan(userId)         → GET  /today/plan
+//   listTimeBlocks(userId, ...)  → GET  /today/blocks?from&to
+//   createTimeBlock(userId, ...) → POST /today/blocks
+//   deleteTimeBlock(userId, id)  → DELETE /today/blocks/:id
 //
 // Browser calls use NEXT_PUBLIC_API_URL. Until email auth exists, the Goals UI
 // stores the demo user id from getMe() and sends it as X-User-Id.
@@ -210,6 +214,83 @@ export function setTaskCompleted(
 
 export function deleteTask(userId: string, taskId: string) {
   return apiFetch<{ ok: true }>(`/tasks/${taskId}`, {
+    method: "DELETE",
+    userId,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Today — plan list + calendar time blocks
+// ---------------------------------------------------------------------------
+
+export type PlanGoal = {
+  id: string;
+  name: string;
+  color: string;
+  tasks: {
+    id: string;
+    title: string;
+    completed: boolean;
+    sortOrder: number;
+  }[];
+};
+
+export type TimeBlock = {
+  id: string;
+  userId: string;
+  taskId: string;
+  startAt: string;
+  endAt: string;
+  createdAt: string;
+  updatedAt: string;
+  task: {
+    id: string;
+    title: string;
+    completed: boolean;
+    folderId: string;
+    folder: {
+      id: string;
+      name: string;
+      color: string;
+    };
+  };
+};
+
+/** Leaf goals + tasks for the Plan Your Day panel. */
+export function getTodayPlan(userId: string) {
+  return apiFetch<{ goals: PlanGoal[] }>("/today/plan", { userId });
+}
+
+/** Blocks whose startAt is in [from, to). Pass local-day bounds as ISO strings. */
+export function listTimeBlocks(userId: string, from: Date, to: Date) {
+  const params = new URLSearchParams({
+    from: from.toISOString(),
+    to: to.toISOString(),
+  });
+  return apiFetch<{ blocks: TimeBlock[] }>(`/today/blocks?${params}`, {
+    userId,
+  });
+}
+
+/** Schedule a task into a dragged calendar range. */
+export function createTimeBlock(
+  userId: string,
+  input: { taskId: string; startAt: Date; endAt: Date },
+) {
+  return apiFetch<{ block: TimeBlock }>("/today/blocks", {
+    method: "POST",
+    userId,
+    body: {
+      taskId: input.taskId,
+      startAt: input.startAt.toISOString(),
+      endAt: input.endAt.toISOString(),
+    },
+  });
+}
+
+/** Remove a calendar block (the task itself stays on the goal). */
+export function deleteTimeBlock(userId: string, blockId: string) {
+  return apiFetch<{ ok: true }>(`/today/blocks/${blockId}`, {
     method: "DELETE",
     userId,
   });

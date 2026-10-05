@@ -13,6 +13,10 @@
 //   POST /folders/:id/tasks           → create task
 //   PATCH /tasks/:id                  → toggle completed
 //   DELETE /tasks/:id                 → delete task
+//   GET  /today/plan                  → leaf goals + tasks for Plan Your Day
+//   GET  /today/blocks?from&to        → time blocks in a range
+//   POST /today/blocks                → schedule a task into a time range
+//   DELETE /today/blocks/:id          → remove a calendar block
 //
 // Takeoff (Next.js) calls these from apps/takeoff/src/lib/api.ts using
 // NEXT_PUBLIC_API_URL (default http://localhost:4000).
@@ -26,6 +30,7 @@ import {
   meRouter,
   tasksRouter,
 } from "./routes/goals.js";
+import { todayRouter } from "./routes/today.js";
 
 const app = express();
 // Port Pluto listens on. Comes from apps/pluto/.env, or 4000 if unset.
@@ -71,6 +76,7 @@ app.use("/me", meRouter);
 app.use("/folders", foldersRouter);
 app.use("/folders/:folderId/tasks", folderTasksRouter);
 app.use("/tasks", tasksRouter);
+app.use("/today", todayRouter);
 
 const server = app.listen(port, () => {
   console.log(`API listening on http://localhost:${port}`);

@@ -60,6 +60,7 @@ model User {
 
   folders Folder[]
   tasks   Task[]
+  timeBlocks TimeBlock[]
 }
 
 // ---------------------------------------------------------------------------
@@ -134,4 +135,31 @@ model Task {
 
   @@index([folderId])
   @@index([userId])
+
+  timeBlocks TimeBlock[]
+}
+
+// ---------------------------------------------------------------------------
+// TimeBlock
+// ---------------------------------------------------------------------------
+// A scheduled placement of a Task on the user's day calendar (Today page).
+// startAt / endAt are absolute timestamps; for now the UI only creates blocks
+// for "today", but storing DateTimes keeps multi-day planning easy later.
+// Parent goal color/name are read via task → folder, not duplicated here.
+model TimeBlock {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  startAt DateTime
+  endAt   DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, startAt])
+  @@index([taskId])
 }

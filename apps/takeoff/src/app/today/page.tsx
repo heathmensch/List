@@ -1,9 +1,10 @@
+import { TodayWorkspace } from "@/components/today/TodayWorkspace";
+
+// Today route (`/today`). Interactive plan + calendar live in TodayWorkspace.
 export default function TodayPage() {
   return (
-    <header>
-      <h1 className="text-3xl font-semibold tracking-tight text-[var(--foreground)]">
-        My Daily Plan
-      </h1>
-    </header>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <TodayWorkspace />
+    </div>
   );
 }

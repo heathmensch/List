@@ -106,11 +106,15 @@ function GoalsWorkspaceInner() {
         if (current && next.some((f) => f.id === current)) return current;
         return next[0]?.id ?? null;
       });
-      // Expand ancestors so new children are visible.
+      // Keep the user's expand/collapse choices. Only open ancestors of a newly
+      // selected folder so that item is visible — never re-open the whole tree.
       setExpandedIds((prev) => {
-        const copy = new Set(prev);
-        for (const folder of next) {
-          if (folder.kind === "goal") copy.add(folder.id);
+        const validIds = new Set(next.map((f) => f.id));
+        const copy = new Set([...prev].filter((id) => validIds.has(id)));
+        if (preferSelectId) {
+          for (const ancestor of folderBreadcrumbs(next, preferSelectId)) {
+            if (ancestor.id !== preferSelectId) copy.add(ancestor.id);
+          }
         }
         return copy;
       });

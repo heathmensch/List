@@ -25,7 +25,7 @@ You can ignore `node_modules/` and `.next/`. Those are installed or generated, n
 | ----------------- | ------------ |
 | `layout.tsx`      | App shell: fonts, metadata, left Sidebar, main column. |
 | `page.tsx`        | Goals (`/`) — mounts `GoalsWorkspace`. |
-| `today/page.tsx`  | Today (`/today`) — header only for now. |
+| `today/page.tsx`  | Today (`/today`) — mounts `TodayWorkspace` (plan list + day calendar). |
 | `globals.css`     | Brand colors (`--brand`, `--sidebar`, etc.) and Tailwind. |
 
 ---
@@ -41,6 +41,9 @@ You can ignore `node_modules/` and `.next/`. Those are installed or generated, n
 | `goals/FolderDetail.tsx` | Breadcrumbs + action steps for the selected folder. |
 | `goals/FolderContextMenu.tsx` | Right-click menu. |
 | `goals/NamePrompt.tsx` | Modal to name a new folder. |
+| `today/TodayWorkspace.tsx` | Loads plan + blocks; drag-to-schedule pick mode. |
+| `today/PlanPanel.tsx` | Left leaf-goal / task list. |
+| `today/DayCalendar.tsx` | Day grid with drag range + colored blocks. |
 
 ---
 

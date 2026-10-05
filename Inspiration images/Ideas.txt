@@ -1,0 +1,3 @@
+We can create an estimated time to complete for each tasks or goal
+so that when we allocate time it takes shows the amount of time we have worked
+on that specific thing compared to how long we expected it to take.
