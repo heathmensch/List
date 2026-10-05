@@ -1,6 +1,5 @@
 // Shared product limits for the Goals folder tree.
-// Import these in routes so every endpoint uses the same numbers.
-// Depth and sibling caps may change later — update here only.
+// Import these in services so every endpoint uses the same numbers.
 
 /** Deepest allowed folder level (top-level folders are depth 1). */
 export const MAX_FOLDER_DEPTH = 10;

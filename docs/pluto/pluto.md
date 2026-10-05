@@ -1,13 +1,13 @@
 # Pluto
 
-Pluto is the backend. It is an Express server that talks to PostgreSQL through Prisma.
+Pluto is the backend. It is a **NestJS** API that talks to PostgreSQL through Prisma.
 
-Most day-to-day work happens in two places: `prisma/` (the database shape) and `src/` (the server and routes).
+Most day-to-day work happens in two places: `prisma/` (the database shape) and `src/` (Nest modules).
 
 ```
 apps/pluto
   prisma/             Database schema + migrations
-  src/                Server code
+  src/                NestJS app (modules, controllers, services)
   prisma.config.ts    Tells Prisma where the schema and database URL live
   .env                Local secrets (not committed)
   .env.example        Copy this if you need a new .env
@@ -22,25 +22,29 @@ You can ignore `node_modules/`, `dist/`, and `src/generated/`. Those are install
 
 | File            | Why you care                                                                                                       |
 | --------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `schema.prisma` | Tables: `User`, `Folder`, `Task`, and `FolderKind`. After changes: `pnpm db:migrate` then `pnpm db:generate`.     |
+| `schema.prisma` | Tables: `User`, `Folder`, `Task`, `TimeBlock`, `FolderKind`. After changes: `pnpm db:migrate` then `pnpm db:generate`. |
 | `migrations/`   | SQL history applied to Postgres. Do not edit old migrations by hand unless fixing a broken deploy.               |
 
 ---
 
 ## `src/`
 
-| Path                 | Why you care                                                                                                                                 |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `index.ts`           | Boots Express, CORS, JSON, mounts `/health`, `/me`, `/folders`, `/tasks`.                                                                    |
-| `routes/goals.ts`    | HTTP handlers for the Goals tree (me, folders, tasks).                                                                                       |
-| `lib/prisma.ts`      | Shared Prisma client.                                                                                                                        |
-| `lib/constants.ts`   | `MAX_FOLDER_DEPTH`, `MAX_FOLDER_CHILDREN`, folder colors, demo email.                                                                        |
-| `lib/folders.ts`     | Tree rules: sibling caps, depth, category→goal promotion, clear-tasks.                                                                       |
-| `lib/tasks.ts`       | Task create/list/toggle/delete; only on `kind = category` leaves.                                                                            |
+| Path | Why you care |
+| ---- | ------------ |
+| `main.ts` | Boots Nest, CORS, global `{ error }` filter, listens on `PORT`. |
+| `app.module.ts` | Imports feature modules. |
+| `prisma/` | `PrismaService` + global `PrismaModule`. |
+| `common/` | `DomainError`, exception filter, `X-User-Id` guard/decorator. |
+| `health/` | `GET /health` |
+| `me/` | `GET /me` demo user bootstrap |
+| `folders/` | Folder tree CRUD rules + `/folders` routes |
+| `tasks/` | Task routes under `/folders/:id/tasks` and `/tasks/:id` |
+| `today/` | Plan list + calendar time blocks |
+| `constants.ts` | Depth/sibling caps, folder colors, demo email |
 
 ### API ↔ Takeoff
 
-Takeoff calls these from `apps/takeoff/src/lib/api.ts` with `NEXT_PUBLIC_API_URL` and header `X-User-Id` (from `GET /me`).
+Takeoff calls these from `apps/takeoff/src/lib/api.ts` with `NEXT_PUBLIC_API_URL` and header `X-User-Id` (from `GET /me`). Paths are unchanged from the Express era.
 
 | Method | Path | Purpose |
 | ------ | ---- | ------- |
@@ -48,14 +52,16 @@ Takeoff calls these from `apps/takeoff/src/lib/api.ts` with `NEXT_PUBLIC_API_URL
 | GET | `/me` | Upsert demo user; returns `{ id, email }` |
 | GET | `/folders` | Flat folder list for `X-User-Id` |
 | POST | `/folders` | Create top-level or child (`name`, optional `parentId`) |
-| GET | `/today/plan` | Leaf goals + tasks for Plan Your Day |
-| GET | `/today/blocks?from&to` | Time blocks in an ISO range (client sends local-day bounds) |
-| POST | `/today/blocks` | Schedule a task (`taskId`, `startAt`, `endAt`); rejects overlaps |
-| DELETE | `/today/blocks/:id` | Remove a calendar block (task remains on the goal) |
+| POST | `/folders/:id/clear-tasks` | Delete all tasks on a leaf |
+| DELETE | `/folders/:id` | Delete leaf folder (no children); tasks cascade; may demote parent |
 | GET | `/folders/:id/tasks` | List tasks |
 | POST | `/folders/:id/tasks` | Create task (`title`) |
 | PATCH | `/tasks/:id` | Set `completed` |
 | DELETE | `/tasks/:id` | Delete task |
+| GET | `/today/plan` | Leaf goals + tasks for Plan Your Day |
+| GET | `/today/blocks?from&to` | Time blocks in an ISO range |
+| POST | `/today/blocks` | Schedule a task; rejects overlaps |
+| DELETE | `/today/blocks/:id` | Remove a calendar block |
 
 ---
 

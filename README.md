@@ -1,10 +1,10 @@
 # Lists
 
-Monorepo for a Next.js frontend, Node.js API, and PostgreSQL database.
+Monorepo for a Next.js frontend, NestJS API, and PostgreSQL database.
 
 ```
 apps/takeoff   Next.js app (http://localhost:3000)
-apps/pluto     Express + Prisma API (http://localhost:4000)
+apps/pluto     NestJS + Prisma API (http://localhost:4000)
 docs/          What each app's folders and files are for
 ```
 
@@ -42,13 +42,13 @@ That starts the API and the Next.js app together.
 | --- | --- |
 | `pnpm dev` | Run Takeoff + Pluto |
 | `pnpm dev:takeoff` | Next.js only |
-| `pnpm dev:pluto` | API only |
+| `pnpm dev:pluto` | Nest API only |
 | `pnpm db:up` | Start PostgreSQL |
 | `pnpm db:down` | Stop PostgreSQL |
 | `pnpm db:migrate` | Create/apply Prisma migrations |
 | `pnpm db:studio` | Open Prisma Studio |
 
-The home page calls `GET /health` on the API and reports whether the API and database are reachable.
+The home Goals/Today UI talks to Pluto over HTTP (`NEXT_PUBLIC_API_URL`).
 
 ## Database
 
