@@ -1,3 +1,4 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Sidebar } from "@/components/Sidebar";
@@ -25,12 +26,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-dvh font-sans">
-        <div className="flex min-h-dvh">
-          <Sidebar />
-          <main className="flex min-h-dvh min-w-0 flex-1 flex-col bg-[var(--background)] px-10 py-8">
-            {children}
-          </main>
-        </div>
+        <ClerkProvider>
+          <div className="flex min-h-dvh">
+            <Sidebar />
+            <main className="flex min-h-dvh min-w-0 flex-1 flex-col bg-[var(--background)] px-10 py-8">
+              {children}
+            </main>
+          </div>
+        </ClerkProvider>
       </body>
     </html>
   );
