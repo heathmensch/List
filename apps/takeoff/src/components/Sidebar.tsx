@@ -2,12 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Show,
-  SignInButton,
-  SignUpButton,
-  UserButton,
-} from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
 
 const navItems = [
   {
@@ -116,39 +111,16 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto border-t border-[var(--border)] px-2 pt-4">
-        <Show when="signed-out">
-          <div className="flex flex-col gap-2">
-            <SignInButton mode="modal">
-              <button
-                type="button"
-                className="w-full rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-black/[0.03]"
-              >
-                Sign in
-              </button>
-            </SignInButton>
-            <SignUpButton mode="modal">
-              <button
-                type="button"
-                className="w-full rounded-lg bg-[var(--brand)] px-3 py-2 text-sm font-medium text-white hover:opacity-95"
-              >
-                Sign up
-              </button>
-            </SignUpButton>
-          </div>
-        </Show>
-        <Show when="signed-in">
-          <div className="flex items-center gap-3 px-1">
-            <UserButton
-              appearance={{
-                elements: {
-                  avatarBox: "h-9 w-9",
-                },
-              }}
-            />
-            <span className="text-sm text-[var(--muted)]">Account</span>
-          </div>
-        </Show>
+      {/* Only reached when signed in (middleware protects the app shell). */}
+      <div className="mt-auto flex items-center gap-3 border-t border-[var(--border)] px-2 pt-4">
+        <UserButton
+          appearance={{
+            elements: {
+              avatarBox: "h-9 w-9",
+            },
+          }}
+        />
+        <span className="text-sm text-[var(--muted)]">Account</span>
       </div>
     </aside>
   );

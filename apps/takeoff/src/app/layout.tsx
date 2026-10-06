@@ -1,7 +1,6 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Sidebar } from "@/components/Sidebar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,6 +18,11 @@ export const metadata: Metadata = {
   description: "Big goals. Small steps. Real progress.",
 };
 
+/**
+ * Root shell: fonts + Clerk only.
+ * Signed-in app chrome (sidebar) lives in `(app)/layout.tsx`.
+ * Sign-in / sign-up stay outside that group so auth is the first screen.
+ */
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -26,14 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-dvh font-sans">
-        <ClerkProvider>
-          <div className="flex min-h-dvh">
-            <Sidebar />
-            <main className="flex min-h-dvh min-w-0 flex-1 flex-col bg-[var(--background)] px-10 py-8">
-              {children}
-            </main>
-          </div>
-        </ClerkProvider>
+        <ClerkProvider>{children}</ClerkProvider>
       </body>
     </html>
   );
