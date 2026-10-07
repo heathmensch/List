@@ -20,6 +20,7 @@
     "takeoff": {
       "root": "apps/takeoff",
       "framework": "nextjs",
+      "installCommand": "rm -rf node_modules && pnpm install --frozen-lockfile",
       "bindings": [
         {
           "type": "service",
