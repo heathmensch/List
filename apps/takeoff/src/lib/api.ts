@@ -15,10 +15,33 @@
 //   createTimeBlock(userId, ...) → POST /today/blocks
 //   deleteTimeBlock(userId, id)  → DELETE /today/blocks/:id
 //
-// Browser calls use NEXT_PUBLIC_API_URL. Until email auth exists, the Goals UI
-// stores the demo user id from getMe() and sends it as X-User-Id.
+// Until email auth exists, the Goals UI stores the demo user id from getMe()
+// and sends it as X-User-Id.
+//
+// Which host this module calls:
+//   - Server on Vercel: PLUTO_URL, injected by the takeoff → pluto binding.
+//     Do not set PLUTO_URL. Bindings are runtime-only and are not available
+//     in the browser, during `next build`, or in middleware.
+//   - Local `pnpm dev`: NEXT_PUBLIC_API_URL (http://localhost:4000).
+//   - Browser on Vercel: same-origin /api, rewritten to Pluto. The rewrite
+//     strips that prefix, so Pluto still sees /folders, /tasks, and so on.
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+function resolveApiUrl(path: string): string {
+  if (typeof window === "undefined" && process.env.PLUTO_URL) {
+    return new URL(path.replace(/^\//, ""), process.env.PLUTO_URL).toString();
+  }
+
+  const configured = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+  if (configured) {
+    return `${configured}${path}`;
+  }
+
+  if (typeof window !== "undefined") {
+    return `/api${path}`;
+  }
+
+  return `http://localhost:4000${path}`;
+}
 
 // ---------------------------------------------------------------------------
 // Shared types (mirror Pluto JSON; keep in sync with prisma FolderKind)
@@ -93,7 +116,7 @@ async function apiFetch<T>(
     headers["X-User-Id"] = options.userId;
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(resolveApiUrl(path), {
     method: options.method ?? "GET",
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
@@ -130,7 +153,7 @@ export type HealthResult =
 
 export async function getApiHealth(): Promise<HealthResult> {
   try {
-    const response = await fetch(`${API_URL}/health`, { cache: "no-store" });
+    const response = await fetch(resolveApiUrl("/health"), { cache: "no-store" });
     if (!response.ok) {
       return { ok: false, reason: "unhealthy" };
     }
