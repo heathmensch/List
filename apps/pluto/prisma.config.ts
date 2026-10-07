@@ -1,5 +1,7 @@
-// Config for the Prisma CLI (migrate, generate, studio), not for Express at
-// request time. The running API still reads DATABASE_URL itself in src/lib/prisma.ts.
+// Config for the Prisma CLI (migrate, generate, studio), not for Nest at
+// request time. The running API reads DATABASE_URL (transaction pooler) in
+// PrismaService. Migrations need a session-mode connection, so the CLI uses
+// DIRECT_URL. Prisma 7 does not accept url/directUrl inside schema.prisma.
 import "dotenv/config";
 import { defineConfig, env } from "prisma/config";
 
@@ -9,7 +11,6 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    // Same DATABASE_URL as in apps/pluto/.env
-    url: env("DATABASE_URL"),
+    url: env("DIRECT_URL"),
   },
 });

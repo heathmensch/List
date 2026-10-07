@@ -16,8 +16,11 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
-// Engine is Postgres. The actual URL lives in prisma.config.ts / .env
-// (Prisma 7 no longer puts url = env("DATABASE_URL") in this file).
+// Engine is Postgres on Supabase. Prisma 7 does not allow url or directUrl
+// in this file. apps/pluto/.env holds both connection strings:
+//   DATABASE_URL — transaction pooler (port 6543); Nest reads this at runtime
+//   DIRECT_URL   — session pooler (port 5432); prisma.config.ts uses this
+//                  for migrations
 datasource db {
   provider = "postgresql"
 }
