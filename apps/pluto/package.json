@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/main.mts",
+    "dev": "tsx watch src/main.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/main.mjs",
+    "start": "node dist/main.js",
     "lint": "tsc -p tsconfig.json --noEmit",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",

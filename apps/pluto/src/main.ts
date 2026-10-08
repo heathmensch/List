@@ -1,6 +1,4 @@
-// Pluto NestJS entry point. The .mts extension compiles to main.mjs so Node
-// loads it as an ES module on Vercel, where the generated function package.json
-// does not keep "type": "module".
+// Pluto NestJS entry point.
 //
 // Route map (unchanged from Express so Takeoff keeps working):
 //   GET  /health
@@ -18,8 +16,11 @@
 //   POST /today/blocks
 //   DELETE /today/blocks/:id
 //
-import "dotenv/config";
+
 import "reflect-metadata";
+if (process.env.NODE_ENV !== "production") {
+  await import("dotenv/config");
+}
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module.js";
 import { DomainExceptionFilter } from "./common/domain-exception.filter.js";
