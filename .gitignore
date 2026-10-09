@@ -30,3 +30,4 @@ generated
 *.pem
 AGENTS.md
 CLAUDE.md
+.env*
