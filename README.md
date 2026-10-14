@@ -50,6 +50,17 @@ That starts the API and the Next.js app together.
 
 The home Goals/Today UI talks to Pluto over HTTP (`NEXT_PUBLIC_API_URL`).
 
+## Deploy (Vercel)
+
+Takeoff and Pluto are **separate** Vercel projects from the same repo:
+
+| Project | Root Directory | Notes |
+| --- | --- | --- |
+| takeoff | `apps/takeoff` | Set `NEXT_PUBLIC_API_URL` to Pluto’s public URL |
+| pluto | `apps/pluto` | Set `CORS_ORIGIN` to Takeoff’s public URL(s) |
+
+Each app has its own `vercel.json` (pnpm install from the monorepo root).
+
 ## Database
 
 PostgreSQL runs in Docker (`postgres:16-alpine`) as `lists-db` on host port `5433` (so it can run alongside other local Postgres containers).

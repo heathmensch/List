@@ -70,5 +70,5 @@ Takeoff calls these from `apps/takeoff/src/lib/api.ts` with `NEXT_PUBLIC_API_URL
 | File               | Why you care                                                                                   |
 | ------------------ | ---------------------------------------------------------------------------------------------- |
 | `prisma.config.ts` | Points Prisma at `schema.prisma` and `DATABASE_URL`. You rarely change this.                   |
-| `.env`             | `DATABASE_URL`, `PORT`, and `CORS_ORIGIN` for local development.                               |
+| `.env`             | `DATABASE_URL`, `DIRECT_URL`, `PORT`, and `CORS_ORIGIN` for local development. On Vercel, set `CORS_ORIGIN` to Takeoff’s URL(s), comma-separated. |
 | `package.json`     | Scripts for running the server and Prisma. Prefer the root `pnpm` commands in the main README. |

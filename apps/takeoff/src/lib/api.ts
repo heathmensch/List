@@ -19,28 +19,15 @@
 // and sends it as X-User-Id.
 //
 // Which host this module calls:
-//   - Server on Vercel: PLUTO_URL, injected by the takeoff → pluto binding.
-//     Do not set PLUTO_URL. Bindings are runtime-only and are not available
-//     in the browser, during `next build`, or in middleware.
-//   - Local `pnpm dev`: NEXT_PUBLIC_API_URL (http://localhost:4000).
-//   - Browser on Vercel: same-origin /api, rewritten to Pluto. The rewrite
-//     strips that prefix, so Pluto still sees /folders, /tasks, and so on.
+//   - Production / preview: NEXT_PUBLIC_API_URL = Pluto's public URL
+//     (set in the Takeoff Vercel project). Required for separate deployments.
+//   - Local `pnpm dev`: NEXT_PUBLIC_API_URL=http://localhost:4000 (see .env.example).
 
 function resolveApiUrl(path: string): string {
-  if (typeof window === "undefined" && process.env.PLUTO_URL) {
-    return new URL(path.replace(/^\//, ""), process.env.PLUTO_URL).toString();
-  }
-
-  const configured = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
-  if (configured) {
-    return `${configured}${path}`;
-  }
-
-  if (typeof window !== "undefined") {
-    return `/api${path}`;
-  }
-
-  return `http://localhost:4000${path}`;
+  const base =
+    process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
+    "http://localhost:4000";
+  return `${base}${path}`;
 }
 
 // ---------------------------------------------------------------------------

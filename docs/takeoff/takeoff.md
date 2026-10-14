@@ -54,4 +54,4 @@ You can ignore `node_modules/` and `.next/`. Those are installed or generated, n
 | `api.ts` | All Pluto HTTP calls + shared `Folder` / `Task` types. Start here to see frontend↔backend linkage. |
 | `folderTree.ts` | Builds a nested tree from Pluto’s flat `GET /folders` list. |
 
-`NEXT_PUBLIC_API_URL` (default `http://localhost:4000`) must point at Pluto.
+`NEXT_PUBLIC_API_URL` (default `http://localhost:4000`) must point at Pluto. On Vercel, set it to Pluto’s public deployment URL.

@@ -28,9 +28,13 @@ import { DomainExceptionFilter } from "./common/domain-exception.filter.js";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const corsOrigin = process.env.CORS_ORIGIN ?? "http://localhost:3000";
+  // Comma-separated exact origins (Takeoff prod + any preview URLs you need).
+  const corsOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:3000")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
   app.enableCors({
-    origin: corsOrigin,
+    origin: corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins,
     allowedHeaders: ["Content-Type", "X-User-Id"],
   });
 
