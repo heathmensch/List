@@ -59,7 +59,7 @@ Takeoff and Pluto are **separate** Vercel projects from the same repo:
 | takeoff | `apps/takeoff` | Set `NEXT_PUBLIC_API_URL` to Pluto’s public URL |
 | pluto | `apps/pluto` | Set `CORS_ORIGIN` to Takeoff’s public URL(s) |
 
-Each app has its own `vercel.json` (pnpm install from the monorepo root).
+Each app has its own `vercel.json` (pnpm install from the monorepo root, filtered to that app). `DIRECT_URL` / `DATABASE_URL` belong only on the **pluto** project — not takeoff.
 
 ## Database
 
